@@ -1,0 +1,81 @@
+# vim: filetype=apache
+
+AddHandler cgi-script .cgi
+## BEGIN APACHE CONFIG SNIPPET - ICINGA.CONF
+#Alias /stylesheets /etc/icinga/stylesheets
+ScriptAlias /cgi-bin/icinga /usr/lib/cgi-bin/icinga
+ScriptAlias /icinga/cgi-bin /usr/lib/cgi-bin/icinga
+
+# Where the stylesheets (config files) reside
+Alias /icinga/stylesheets /etc/icinga/stylesheets
+
+# Where the HTML pages live
+Alias /icinga /usr/share/icinga/htdocs
+
+<VirtualHost *:443>
+  ServerName <%= @virtual_host %>
+  ServerAdmin noc@wikimedia.org
+  # https://httpoxy.org/
+  RequestHeader unset Proxy early
+  SSLEngine On
+  SSLCertificateFile /etc/acme/cert/icinga.crt
+  SSLCertificateChainFile /etc/acme/cert/icinga.chain.crt
+  SSLCertificateKeyFile /etc/acme/key/icinga.key
+  <%= @ssl_settings.join("\n    ") %>
+
+  DocumentRoot /usr/share/icinga/htdocs
+
+  <DirectoryMatch (/usr/share/icinga/htdocs|/usr/lib/cgi-bin/icinga|/etc/icinga/stylesheets)>
+  Options FollowSymLinks
+  SSLRequireSSL
+  Options ExecCGI
+  DirectoryIndex index.html
+  AllowOverride None
+
+  # We monitor icinga externally allowing access
+  # to only the extinfo.cgi file.
+  <Files extinfo.cgi>
+    AuthMerging Or
+    Require ip 81.25.198.18
+    Require ip 38.104.3.42
+    Require ip 4.31.195.94
+    Require ip 38.122.67.74
+    Require ip 85.17.12.81
+    Require ip 85.17.12.83
+    Require ip 195.12.224.49/28
+  </Files>
+  AuthName "WMF Labs (use wiki login name not shell) - nda/ops/wmf"
+  AuthType Basic
+  AuthBasicProvider ldap
+  AuthLDAPBindDN cn=proxyagent,ou=profile,dc=wikimedia,dc=org
+  AuthLDAPBindPassword <%= @ldap_bind_password %>
+  AuthLDAPURL "ldaps://ldap-labs.eqiad.wikimedia.org ldap-labs.codfw.wikimedia.org/ou=people,dc=wikimedia,dc=org?cn"
+  Require ldap-group cn=ops,ou=groups,dc=wikimedia,dc=org
+  Require ldap-group cn=wmf,ou=groups,dc=wikimedia,dc=org
+  Require ldap-group cn=nda,ou=groups,dc=wikimedia,dc=org
+  </DirectoryMatch>
+
+  <IfModule !mod_alias.c>
+    LoadModule alias_module modules/mod_alias.so
+  </IfModule>
+
+  RedirectMatch ^/$ https://<%= @virtual_host %>/icinga
+  ErrorLog /var/log/apache2/icinga.log
+  LogLevel warn
+</VirtualHost>
+
+<VirtualHost *:80>
+  ServerName <%= @virtual_host %>
+  ServerAdmin noc@wikimedia.org
+  DocumentRoot /usr/share/icinga/htdocs
+
+  Include /etc/acme/challenge-apache.conf
+
+  RewriteEngine on
+  RewriteCond %{SERVER_PORT} !^443$
+  RewriteCond %{REQUEST_URI} !^/\.well-known/acme-challenge/
+  RewriteRule ^/(.*)$ https://<%= @virtual_host %>/$1 [L,R=301]
+
+  ErrorLog /var/log/apache2/icinga.log
+  LogLevel warn
+</VirtualHost>

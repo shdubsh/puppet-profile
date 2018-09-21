@@ -16,6 +16,8 @@ class profile::puppetmaster_vagrant {
     value   => 'true'
   }
 
+  ensure_packages('apt-transport-https')
+
   class { 'puppetdb':
     listen_address => '0.0.0.0'
   }
