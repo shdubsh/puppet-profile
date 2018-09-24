@@ -2,6 +2,7 @@ class profile::icinga (
   $virtual_host = 'icinga.test'
 ) {
   include icinga
+  include nsca::daemon
 
   # Required for integration with monitoring module
   file { '/etc/nagios':
@@ -59,6 +60,8 @@ class profile::icinga (
     #include ::passwords::ldap::wmf_cluster
     #$ldap_bind_password = $passwords::ldap::wmf_cluster::proxypass
     $ldap_bind_password = 'placeholder'
+
+    include nsca::firewall
 
     $ssl_settings = ssl_ciphersuite('apache', 'mid', true)
 
