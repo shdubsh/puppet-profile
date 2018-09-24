@@ -3,6 +3,19 @@ class profile::icinga (
 ) {
   include icinga
   include nsca::daemon
+  include monitoring::monitor::checkpaging
+  include monitoring::monitor::wikidata
+  include monitoring::monitor::ores
+  include monitoring::monitor::toollabs
+  include monitoring::monitor::legal
+  include monitoring::monitor::certs
+  include monitoring::monitor::gsb
+  include monitoring::monitor::commons
+  include monitoring::monitor::wdqs
+  include monitoring::monitor::performance
+  include monitoring::monitor::services
+  include monitoring::monitor::reading_web
+  include monitoring::monitor::traffic
 
   # Required for integration with monitoring module
   file { '/etc/nagios':
@@ -62,6 +75,7 @@ class profile::icinga (
     $ldap_bind_password = 'placeholder'
 
     include nsca::firewall
+    include monitoring::monitor::elasticsearch
 
     $ssl_settings = ssl_ciphersuite('apache', 'mid', true)
 
