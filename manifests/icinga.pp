@@ -22,6 +22,7 @@ class profile::icinga (
     ensure => directory
   }
 
+  # TODO: this should probably be in monitoring included in base
   monitoring::group { "${role}_${datacenter}":
     description => "${role}_${datacenter} host and service group"
   }
@@ -30,6 +31,7 @@ class profile::icinga (
     group => "${role}_${datacenter}"
   }
 
+  # TODO: Should probably be moved to monitoring module
   # Check that the icinga config is sane
   monitoring::service { 'check_icinga_config':
     group          => "${role}_${datacenter}",
@@ -38,6 +40,7 @@ class profile::icinga (
     check_interval => 10,
   }
 
+  # IRC Echo Resources
   $ircecho_logs   = {
     '/var/log/icinga/irc.log'             => '#wikimedia-operations',
     '/var/log/icinga/irc-wikidata.log'    => '#wikidata',
@@ -59,6 +62,21 @@ class profile::icinga (
     ircecho_nick   => $ircecho_nick,
     ircecho_server => $ircecho_server,
   }
+
+  # Phabricator Bot
+  # TODO: secrets module
+  #include ::passwords::phabricator
+  $ops_monitoring_bot_token = 'placeholder'
+
+  class { '::phabricator::bot':
+    username => 'ops-monitoring-bot',
+    token    => $ops_monitoring_bot_token,
+    owner    => $icinga::icinga_user,
+    group    => $icinga::icinga_group,
+  }
+
+  ensure_packages('python-phabricator')
+
 
   # T28784 - IRC bots process need nagios monitoring
   # TODO: enable when nrpe is available
