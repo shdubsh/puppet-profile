@@ -3,6 +3,7 @@ class profile::icinga (
 ) {
   include icinga
   include nsca::daemon
+  include monitoring::monitor::frack
   include monitoring::monitor::checkpaging
   include monitoring::monitor::wikidata
   include monitoring::monitor::ores
@@ -56,35 +57,7 @@ class profile::icinga (
   $ircecho_nick   = 'icinga-wm'
   $ircecho_server = 'chat.freenode.net +6697'
 
-  class { 'ircecho':
-    ensure         => $ensure,
-    ircecho_logs   => $ircecho_logs,
-    ircecho_nick   => $ircecho_nick,
-    ircecho_server => $ircecho_server,
-  }
-
-  # Phabricator Bot
-  # TODO: secrets module
-  #include ::passwords::phabricator
-  $ops_monitoring_bot_token = 'placeholder'
-
-  class { '::phabricator::bot':
-    username => 'ops-monitoring-bot',
-    token    => $ops_monitoring_bot_token,
-    owner    => $icinga::icinga_user,
-    group    => $icinga::icinga_group,
-  }
-
   ensure_packages('python-phabricator')
-
-
-  # T28784 - IRC bots process need nagios monitoring
-  # TODO: enable when nrpe is available
-  # nrpe::monitor_service { 'ircecho':
-  #   ensure       => $ensure,
-  #   description  => 'ircecho_service_running',
-  #   nrpe_command => '/usr/lib/nagios/plugins/check_procs -w 1:4 -c 1:20 -a ircecho',
-  # }
 
   if ($domain != 'test') {  # FIXME: There must be a better way to detect this.
     # TODO: need secrets module.  rename variable because 'proxypass' indicates a server proxy
@@ -126,6 +99,33 @@ class profile::icinga (
       puppet_svc => 'apache2',
       system_svc => 'apache2',
     }
+
+    # Phabricator Bot
+    # TODO: secrets module
+    #include ::passwords::phabricator
+    $ops_monitoring_bot_token = 'placeholder'
+
+    class { '::phabricator::bot':
+      username => 'ops-monitoring-bot',
+      token    => $ops_monitoring_bot_token,
+      owner    => $icinga::icinga_user,
+      group    => $icinga::icinga_group,
+    }
+
+    class { 'ircecho':
+      ensure         => $ensure,
+      ircecho_logs   => $ircecho_logs,
+      ircecho_nick   => $ircecho_nick,
+      ircecho_server => $ircecho_server,
+    }
+
+    # T28784 - IRC bots process need nagios monitoring
+    # TODO: enable when nrpe is available
+    # nrpe::monitor_service { 'ircecho':
+    #   ensure       => $ensure,
+    #   description  => 'ircecho_service_running',
+    #   nrpe_command => '/usr/lib/nagios/plugins/check_procs -w 1:4 -c 1:20 -a ircecho',
+    # }
   }
   else {
     # If in Vagrant, fall back to local auth.
