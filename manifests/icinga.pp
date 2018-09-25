@@ -1,5 +1,6 @@
 class profile::icinga (
-  $virtual_host = 'icinga.test'
+  $virtual_host = 'icinga.test',
+  $monitoring_groups = {}
 ) {
   include icinga
   include nsca::daemon
@@ -24,13 +25,11 @@ class profile::icinga (
   }
 
   # TODO: this should probably be in monitoring included in base
-  monitoring::group { "${role}_${datacenter}":
-    description => "${role}_${datacenter} host and service group"
-  }
+  # @monitoring::group { "${role}_${datacenter}":
+  #   description => "${role}_${datacenter} host and service group"
+  # }
 
-  monitoring::host { $::hostname:
-    group => "${role}_${datacenter}"
-  }
+  create_resources(monitoring::group, $monitoring_groups)
 
   # TODO: Should probably be moved to monitoring module
   # Check that the icinga config is sane
