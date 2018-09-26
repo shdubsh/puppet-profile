@@ -24,6 +24,11 @@ class profile::icinga (
     ensure => directory
   }
 
+  file { [ '/etc/nagios/nagios_host.cfg', '/etc/nagios/nagios_service.cfg' ]:
+    ensure => 'file',
+    mode => '0444'
+  }
+
   # TODO: this should probably be in monitoring included in base
   # @monitoring::group { "${role}_${datacenter}":
   #   description => "${role}_${datacenter} host and service group"

@@ -14,7 +14,9 @@ class profile::puppetmaster {
     'python-jinja2',
     'python-mysqldb',
     'python-sqlalchemy',
-    'python-requests'
+    'python-requests',
+    'python3-jinja2',
+    'python3-requests'
   ])
 
   file {'/usr/local/bin/naggen2':
